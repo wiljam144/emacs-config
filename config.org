@@ -1,0 +1,512 @@
+#+TITLE: wiljam144's Emacs Config
+#+AUTHOR: Wiljam Holmes (wiljam144)
+#+DESCRIPTION: wiljam144's personal Emacs Config. Made for staying in basement.
+#+STARTUP: showstars
+#+OPTIONS: toc:2
+
+* Preliminaries
+
+#+begin_src emacs-lisp
+;; -*- coding: utf-8; lexical-binding: t -*-
+#+end_src
+
+** Credentials
+
+Credentials are placed in separate files, so that they don't end up in public GitHub repo
+accidentally.
+#+begin_src emacs-lisp
+(load "~/.config/emacs/credentials.el")
+#+end_src
+
+** Performance
+
+To squeeze out some performance.
+#+begin_src emacs-lisp
+  (setq gc-cons-threshold 100000000)
+  (setq max-specpdl-size 5000)
+#+end_src
+
+** Scratch & Quit Messages
+
+#+begin_src emacs-lisp
+  (defun wl/random-choice (items)
+    (nth (random (length items)) items))
+
+  (setq scratch-messages '(";; Approved by The Alphabet Bois\n"
+                           ";; NSA Inside\n"
+                           ";; Not Copyrighted by Anyone 1432-1785\n"
+                           ";; NSA Controlled Since 1952\n"
+                           ";; Spyware Embedded Deep Inside\n"
+                           ";; UwU\n"
+                           ";; <3\n"
+                           ";; Quicksort is Quick\n"
+                           ";; I Have a Smooth Brain\n"
+                           ";; I Probably Have Bipolar Disorder\n"))
+
+  (setq quit-messages '("You will regret this. "
+                        "Come on, do it, see if I care. "
+                        "Get out of here and go back to your boring programs. "))
+
+  (setq initial-scratch-message (wl/random-choice scratch-messages))
+
+  (add-hook 'kill-emacs-query-functions
+            (lambda () (y-or-n-p (wl/random-choice quit-messages)))
+            'append)
+#+end_src
+
+* Fixing Emacs Defaults
+
+** Basics
+
+Most Emacs defaults are pretty weird so let's fix the most basic ones.
+
+#+begin_src emacs-lisp
+  (setq
+   inhibit-startup-screen t
+   intial-scratch-message nil
+   sentence-end-double-space nil
+   ring-bell-function 'ignore
+   save-interprogram-paste-before-kill t
+   use-dialog-box nil
+   use-short-answers nil
+   load-prefer-newer t
+   confirm-kill-processes nil
+   native-comp-async-report-warnings-errors 'silent
+   help-window-select t
+   delete-by-moving-to-trash t
+   scroll-preserve-screen-position t
+   completions-detailed t
+   next-error-message-highlight t
+   read-minibuffer-restore-windows t)
+
+  (setq-default indent-tabs-mode nil)
+
+  (setq custom-file (make-temp-name "/tmp/"))
+
+  (delete-selection-mode t)
+  (savehist-mode)
+#+end_src
+
+Emacs supports a lot of formats, but unicode and utf-8 should be the default.
+
+#+begin_src emacs-lisp
+  (set-charset-priority 'unicode)
+  (prefer-coding-system 'utf-8-unix)
+#+end_src
+
+Emacs loves to create a lot of useless backup files.
+
+#+begin_src emacs-lisp
+  (setq
+   make-backup-files nil
+   auto-save-default nil
+   create-lockfiles nil)
+#+end_src
+
+It also has some pretty weird scrolling by default in my opinion.
+
+#+begin_src emacs-lisp
+  (setq
+   scroll-conservatively 101
+   scroll-up-aggressively 0.01
+   scroll-down-aggressively 0.01
+   auto-window-vscroll nil)
+#+end_src
+
+I also like to get the second pair automatically
+
+#+begin_src emacs-lisp
+  (setq electric-pair-preserve-balance t
+        electric-pair-open-newline-between-pairs t
+        electric-pair-delete-adjacent-pairs t)
+
+  (electric-pair-mode 1)
+#+end_src
+
+** Visuals
+
+Let's make Emacs visuals a bit more modern and informative.
+
+To start off, Let's get rid of those useless toolbars.
+
+#+begin_src emacs-lisp
+  (toggle-frame-maximized)
+  (menu-bar-mode -1)
+  (tool-bar-mode -1)
+  (scroll-bar-mode -1)
+#+end_src
+
+Now let's get a nice font.
+
+#+begin_src emacs-lisp
+  (add-to-list 'default-frame-alist '(font . "Fira Code 11"))
+  (set-face-attribute 'default t :font "Fira Code 11")
+#+end_src
+
+I think highlight line is pretty useful.
+
+#+begin_src emacs-lisp
+  (require 'hl-line)
+  (add-hook 'prog-mode-hook #'hl-line-mode)
+  (add-hook 'text-mode-hook #'hl-line-mode)
+#+end_src
+
+Apart from that I like to have a ruler that shows me where 80 characters are.
+
+#+begin_src emacs-lisp
+  (set-face-foreground 'fill-column-indicator "#202020")
+  (setq display-fill-column-indicator-column 79)
+  (global-display-fill-column-indicator-mode 1)
+#+end_src
+
+And of course line numbers.
+
+#+begin_src emacs-lisp
+  (global-display-line-numbers-mode 1)
+  (setq display-line-numbers-type 'relative)
+
+  (defun wl/disable-line-numbers ()
+    (display-line-numbers-mode -1)
+    (display-fill-column-indicator-mode -1))
+#+end_src
+
+** Hooks
+
+#+begin_src emacs-lisp
+  (add-hook 'text-mode-hook #'wl/disable-line-numbers)
+  (add-hook 'before-save-hook #'delete-trailing-whitespace)
+#+end_src
+
+* Important Packages
+** Package Management
+
+I use ~use-package~ as my package manager.
+
+#+begin_src emacs-lisp
+  (require 'package)
+  (add-to-list 'package-archives
+               '("melpa" . "https://melpa.org/packages/"))
+  (package-initialize)
+
+  (require 'use-package)
+#+end_src
+
+** Evil Mode
+
+Probably the most important part of this config.
+I used Vim/Neovim before I switched to Emacs and because of that,
+Vim bindings are carved into my brain permamently until the end of my days.
+
+#+begin_src emacs-lisp
+  (use-package evil
+    :ensure t
+    :init
+    (setq evil-want-integration t)
+    (setq evil-want-keybinding nil)
+    :config
+    (evil-mode))
+  (use-package evil-collection
+    :after evil
+    :ensure t
+    :config
+    (evil-collection-init))
+#+end_src
+
+** Projectile
+
+#+begin_src emacs-lisp
+  (use-package projectile
+    :ensure t
+    :config
+    (projectile-mode +1))
+#+end_src
+
+** Language Support
+
+*** Syntax Highlighting
+
+Default Emacs highlighting is fine in most languages, but
+~TreeSitter~ is just miles better so why not use it?
+
+#+begin_src emacs-lisp
+  (use-package tree-sitter
+    :ensure t
+    :config
+    (global-tree-sitter-mode)
+    (add-hook 'tree-sitter-after-on-hook #'tree-sitter-hl-mode))
+  (use-package tree-sitter-langs
+    :ensure t)
+#+end_src
+
+*** LSP
+
+I use ~eglot~ as my LSP client.
+
+#+begin_src emacs-lisp
+  (use-package eglot
+    :ensure t
+    :hook
+    ;; Do I need to tell you for what languages these are?
+    (c-mode . eglot-ensure)
+    (c++-mode . eglot-ensure)
+    (python-mode . eglot-ensure)
+
+    ;; OCaml Support
+    (tuareg-mode . eglot-ensure))
+#+end_src
+
+I hate the inlay hints, they are a useless distraction that annoys me.
+
+#+begin_src emacs-lisp
+  (defun wl/eglot-config ()
+    (eglot-inlay-hints-mode -1)
+    (setq
+     eglot-ignored-server-capabilities '(:documentHighlightProvider)
+     eldoc-echo-area-use-multiline-p nil))
+
+  (add-hook 'eglot-managed-mode-hook #'wl/eglot-config)
+#+end_src
+
+*** Autocomplete
+
+I like to have completion because I don't really like typing.
+I use ~company~ to get autocomplete in my code.
+
+#+begin_src emacs-lisp
+  (use-package company
+    :ensure t
+    :hook
+    (after-init . global-company-mode))
+#+end_src
+
+*** Language Support
+
+Here are some packages that provide major modes not included in emacs by default.
+
+#+begin_src emacs-lisp
+  (use-package tuareg
+    :ensure t)
+
+  (use-package markdown-mode
+    :ensure t
+    :init
+    (setq markdown-command "multimarkdown"))
+#+end_src
+
+** Completion
+
+The orderless completion style is much better than the default one.
+
+#+begin_src emacs-lisp
+  (use-package orderless
+    :ensure t
+    :init
+    (setq completion-styles '(orderless basic)
+          completion-category-defaults nil
+          completion-category-overrides '((file (styles partial-completion)))))
+#+end_src
+
+I also use vertico to get completions.
+
+#+begin_src emacs-lisp
+  (use-package vertico
+    :ensure t
+    :init
+    (vertico-mode))
+#+end_src
+
+** Visuals
+
+I like the JetBrains Fleet colorsheme.
+
+#+begin_src emacs-lisp
+  (use-package fleetish-theme
+    :ensure t
+    :config
+    (load-theme 'fleetish t))
+#+end_src
+
+The default modeline in Emacs is pretty boring and ugly.
+Tha's why I use ~doom-modeline~
+
+#+begin_src emacs-lisp
+  (use-package doom-modeline
+    :ensure t
+    :init (doom-modeline-mode 1))
+#+end_src
+
+** Misc
+
+~which-key~ is extremely helpful in discovering emacs functionality.
+
+#+begin_src emacs-lisp
+  (use-package which-key
+    :ensure t
+    :config
+    (which-key-mode))
+#+end_src
+
+Editorconfig is a wonderful thing. It setups my editor automatically
+to match the project requirements.
+
+#+begin_src emacs-lisp
+  (use-package editorconfig
+    :ensure t
+    :config
+    (editorconfig-mode 1))
+#+end_src
+
+~vterm~ is a great terminal that can be opened from Emacs
+
+#+begin_src emacs-lisp
+  (use-package elfeed
+    :ensure t
+    :config
+    (setq elfeed-feeds
+          '("https://wiljam144.github.io/digital-garden/feed.rss")))
+#+end_src
+
+* Keymaps
+
+#+begin_src emacs-lisp
+  (defun wl/keymap (key fun)
+    (define-key evil-normal-state-map (kbd key) fun))
+
+  (wl/keymap "SPC p" 'projectile-command-map)
+  (wl/keymap "SPC SPC" 'projectile-find-file)
+  (wl/keymap "SPC e" 'mu4e)
+  (wl/keymap "SPC `" 'vterm)
+#+end_src
+
+* RSS & Mail
+
+I use elfeed to get RSS.
+
+#+begin_src emacs-lisp
+  (use-package elfeed
+    :ensure t
+    :config
+    (setq elfeed-feeds
+          ;; my own digital garden site feed
+          '("https://wiljam144.github.io/digital-garden/rss.xml")))
+#+end_src
+
+Mail in Emacs is pretty convenient. I use ~mu4e~ for that.
+
+#+begin_src emacs-lisp
+  (require 'mu4e)
+
+  (add-hook 'mu4e-compose-pre-hook (lambda () (display-line-numbers-mode -1)))
+  (setq mail-user-agent 'mu4e-user-agent)
+  (setq mu4e-drafts-folder "/[Gmail].Drafts")
+  (setq mu4e-sent-folder "/[Gmail].Sent Mail")
+  (setq mu4e-trash-folder "/[Gmail].Trash")
+  (setq mu4e-attachment-dir "~/Downloads")
+
+  (setq mu4e-sent-messages-behavior 'delete)
+
+  (setq mu4e-get-mail-command "offlineimap")
+  (setq mu4e-update-interval (* 10 60 60))
+
+  (setq user-mail-address wl/mail)
+
+  (setq
+      user-mail-address wl/mail
+      user-full-name wl/name
+      mu4e-compose-signature
+      (concat
+       wl/name
+       "\n"
+       wl/website))
+#+end_src
+
+For sending mail ~smtpmail~ needs to be used.
+
+#+begin_src emacs-lisp
+  (require 'smtpmail)
+  (setq message-send-mail-function 'smtpmail-send-it
+        starttls-use-gnutls t
+        smtpmail-starttls-credentials '(("smtp.gmail.com" 465 nil nil))
+        smtpmail-auth-credentials
+          '(("smtp.gmail.com" 465 nil nil))
+        smtpmail-stream-type 'ssl
+        smtpmail-default-smtp-server "smtp.gmail.com"
+        smtpmail-smtp-server "smtp.gmail.com"
+        smtpmail-smtp-service 465
+        smtpmail-debug-info t)
+#+end_src
+
+* Ligatures
+
+#+begin_src emacs-lisp
+  (use-package ligature
+    :ensure t
+    :config
+    ;; Enable the "www" ligature in every possible major mode
+    (ligature-set-ligatures 't '("www"))
+    ;; Enable traditional ligature support in eww-mode, if the
+    ;; `variable-pitch' face supports it
+    (ligature-set-ligatures 'eww-mode '("ff" "fi" "ffi"))
+    ;; Enable all Cascadia and Fira Code ligatures in programming modes
+    (ligature-set-ligatures 'prog-mode
+                          '(;; == === ==== => =| =>>=>=|=>==>> ==< =/=//=// =~
+                            ;; =:= =!=
+                            ("=" (rx (+ (or ">" "<" "|" "/" "~" ":" "!" "="))))
+                            ;; ;; ;;;
+                            (";" (rx (+ ";")))
+                            ;; && &&&
+                            ("&" (rx (+ "&")))
+                            ;; !! !!! !. !: !!. != !== !~
+                            ("!" (rx (+ (or "=" "!" "\." ":" "~"))))
+                            ;; ?? ??? ?:  ?=  ?.
+                            ("?" (rx (or ":" "=" "\." (+ "?"))))
+                            ;; %% %%%
+                            ("%" (rx (+ "%")))
+                            ;; |> ||> |||> ||||> |] |} || ||| |-> ||-||
+                            ;; |->>-||-<<-| |- |== ||=||
+                            ;; |==>>==<<==<=>==//==/=!==:===>
+                            ("|" (rx (+ (or ">" "<" "|" "/" ":" "!" "}" "\]"
+                                            "-" "=" ))))
+                            ;; \\ \\\ \/
+                            ("\\" (rx (or "/" (+ "\\"))))
+                            ;; ++ +++ ++++ +>
+                            ("+" (rx (or ">" (+ "+"))))
+                            ;; :: ::: :::: :> :< := :// ::=
+                            (":" (rx (or ">" "<" "=" "//" ":=" (+ ":"))))
+                            ;; // /// //// /\ /* /> /===:===!=//===>>==>==/
+                            ("/" (rx (+ (or ">"  "<" "|" "/" "\\" "\*" ":" "!"
+                                            "="))))
+                            ;; .. ... .... .= .- .? ..= ..<
+                            ("\." (rx (or "=" "-" "\?" "\.=" "\.<" (+ "\."))))
+                            ;; -- --- ---- -~ -> ->> -| -|->-->>->--<<-|
+                            ("-" (rx (+ (or ">" "<" "|" "~" "-"))))
+                            ;; *> */ *)  ** *** ****
+                            ("*" (rx (or ">" "/" ")" (+ "*"))))
+                            ;; www wwww
+                            ("w" (rx (+ "w")))
+                            ;; <> <!-- <|> <: <~ <~> <~~ <+ <* <$ </  <+> <*>
+                            ;; <$> </> <|  <||  <||| <|||| <- <-| <-<<-|-> <->>
+                            ;; <<-> <= <=> <<==<<==>=|=>==/==//=!==:=>
+                            ;; << <<< <<<<
+                            ("<" (rx (+ (or "\+" "\*" "\$" "<" ">" ":" "~"  "!"
+                                            "-"  "/" "|" "="))))
+                            ;; >: >- >>- >--|-> >>-|-> >= >== >>== >=|=:=>>
+                            ;; >> >>> >>>>
+                            (">" (rx (+ (or ">" "<" "|" "/" ":" "=" "-"))))
+                            ;; #: #= #! #( #? #[ #{ #_ #_( ## ### #####
+                            ("#" (rx (or ":" "=" "!" "(" "\?" "\[" "{" "_(" "_"
+                                         (+ "#"))))
+                            ;; ~~ ~~~ ~=  ~-  ~@ ~> ~~>
+                            ("~" (rx (or ">" "=" "-" "@" "~>" (+ "~"))))
+                            ;; __ ___ ____ _|_ __|____|_
+                            ("_" (rx (+ (or "_" "|"))))
+                            ;; Fira code: 0xFF 0x12
+                            ("0" (rx (and "x" (+ (in "A-F" "a-f" "0-9")))))
+                            ;; Fira code:
+                            "Fl"  "Tl"  "fi"  "fj"  "fl"  "ft"
+                            ;; The few not covered by the regexps.
+                            "{|"  "[|"  "]#"  "(*"  "}#"  "$>"  "^="))
+    ;; Enables ligature checks globally in all buffers. You can also do it
+    ;; per mode with `ligature-mode'.
+    (global-ligature-mode t))
+#+end_src

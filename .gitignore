@@ -1,0 +1,12 @@
+credentials.el
+modules/
+elpa/
+auto-save-list/
+projectile-bookmarks.eld
+projectile.cache
+network-security.data
+init2.el
+url/
+transient/
+history
+config.el

@@ -1,0 +1,6 @@
+* Personal Emacs Config
+
+Welcome to my personal Emacs config.
+It's written in org-mode in `config.org`.
+
+Feel free to copy anything you want from here.

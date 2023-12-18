@@ -162,12 +162,33 @@ Apart from that I like to have a ruler that shows me where 80 characters are.
 And of course line numbers.
 
 #+begin_src emacs-lisp
-  (global-display-line-numbers-mode 1)
-  (setq display-line-numbers-type 'relative)
+    (global-display-line-numbers-mode 1)
+    (setq display-line-numbers-type 'relative)
 
-  (defun wl/disable-line-numbers ()
-    (display-line-numbers-mode -1)
-    (display-fill-column-indicator-mode -1))
+    (defun wl/disable-line-numbers ()
+      (display-line-numbers-mode -1)
+      (display-fill-column-indicator-mode -1))
+#+end_src
+
+Indent guides are also useful for me. I had troubles initially, because the face foreground
+wasn't setting up correctly, it turns out, I just had to disable the ~highlight-guides-indent-guides-auto-enabled~ to ~nil~.
+
+#+begin_src emacs-lisp
+  (use-package highlight-indent-guides
+        :ensure t
+        :hook
+        ((prog-mode text-mode conf-mode) . highlight-indent-guides-mode)
+        :init
+        (setq highlight-indent-guides-method 'character
+              highlight-indent-guides-auto-enabled nil
+              highlight-indent-guides-responsive 'top)
+        :config
+        (set-face-foreground 'highlight-indent-guides-character-face "#303030")
+        (set-face-foreground 'highlight-indent-guides-top-character-face "#707070"))
+
+  (add-hook 'after-make-frame-functions #'highlight-indent-guides-auto-set-faces)
+
+  (highlight-indent-guides-mode t)
 #+end_src
 
 ** Hooks
@@ -178,6 +199,7 @@ And of course line numbers.
 #+end_src
 
 * Important Packages
+
 ** Package Management
 
 I use ~use-package~ as my package manager.
@@ -376,6 +398,13 @@ to match the project requirements.
   (wl/keymap "SPC SPC" 'projectile-find-file)
   (wl/keymap "SPC e" 'mu4e)
   (wl/keymap "SPC `" 'vterm)
+#+end_src
+
+* COMMENT Org Mode
+
+#+begin_src emacs-lisp
+  (eval-after-load "org"
+    '(require 'ox-md nil t))
 #+end_src
 
 * RSS & Mail

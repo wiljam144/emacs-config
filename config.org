@@ -308,11 +308,6 @@ Here are some packages that provide major modes not included in emacs by default
 #+begin_src emacs-lisp
   (use-package tuareg
     :ensure t)
-
-  (use-package markdown-mode
-    :ensure t
-    :init
-    (setq markdown-command "multimarkdown"))
 #+end_src
 
 ** Completion
@@ -368,6 +363,11 @@ Tha's why I use ~doom-modeline~
     (which-key-mode))
 #+end_src
 
+#+begin_src emacs-lisp
+  (use-package helpful
+    :ensure t)
+#+end_src
+
 Editorconfig is a wonderful thing. It setups my editor automatically
 to match the project requirements.
 
@@ -394,17 +394,49 @@ to match the project requirements.
   (defun wl/keymap (key fun)
     (define-key evil-normal-state-map (kbd key) fun))
 
+  (wl/keymap "SPC f p"
+             #'(lambda ()
+                 (interactive)
+                 (find-file "~/.config/emacs")))
+
+  (wl/keymap "SPC f n"
+             #'(lambda ()
+                 (interactive)
+                 (find-file "~/Programming/w-garden/content")))
+
   (wl/keymap "SPC p" 'projectile-command-map)
   (wl/keymap "SPC SPC" 'projectile-find-file)
+
   (wl/keymap "SPC e" 'mu4e)
   (wl/keymap "SPC `" 'vterm)
+
+  (wl/keymap "SPC h f" 'helpful-callable)
+  (wl/keymap "SPC h v" 'helpful-variable)
+  (wl/keymap "SPC h k" 'helpful-key)
+  (wl/keymap "SPC h x" 'helpful-command)
+
+  (wl/keymap "SPC m m" 'markdown-toggle-markup-hiding)
 #+end_src
 
-* COMMENT Org Mode
+* Org Mode & Markdown
 
 #+begin_src emacs-lisp
   (eval-after-load "org"
     '(require 'ox-md nil t))
+#+end_src
+
+#+begin_src emacs-lisp
+  (use-package markdown-mode
+      :ensure t
+      :init
+      (setq markdown-command "multimarkdown")
+      (setq-default markdown-hide-markup t)
+      :config
+      (setq markdown-enable-wiki-links t
+          markdown-hide-markup t
+          markdown-fontify-code-blocks-natively t
+          markdown-enable-highlighting-syntax t
+          markdown-hide-urls t))
 #+end_src
 
 * RSS & Mail
